@@ -1,0 +1,8 @@
+fastapi==0.112.0
+uvicorn==0.30.5
+pydantic==2.8.2
+python-dateutil==2.9.0.post0
+pytz==2024.1
+twilio==9.2.3
+gspread==6.1.2
+google-auth==2.35.0
