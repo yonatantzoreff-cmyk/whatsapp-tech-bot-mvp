@@ -63,35 +63,33 @@ def normalize_il_phone(raw) -> Optional[str]:
     if raw is None:
         return None
 
-    # 1) המר לכלי-מחרוזת באופן בטוח (גם ints/floats מ-Google Sheets)
+    # תמיכה במספרים שמגיעים מגוגל (float/int) וגם במחרוזות
     if isinstance(raw, float):
         s = f"{raw:.0f}"  # מונע 5.0E8 וכד'
     else:
         s = str(raw)
 
-    # 2) השאר רק ספרות ו-+ (הסר רווחים/מקפים/סוגריים)
+    # השאר רק ספרות ו-+ (הסר רווחים/מקפים/סוגריים)
     s = "".join(ch for ch in s if ch.isdigit() or ch == "+")
     if not s:
         return None
 
-    # 3) תיקון איבוד אפס מוביל (נפוץ כשגוגל מזהה מספר): 9 ספרות שמתחילות ב-5 -> הוסף '0'
+    # תיקון מקרה שבו האפס המוביל נאבד (נפוץ בגוגל): 9 ספרות שמתחילות ב-5 -> הוסף '0'
     if s[0] == "5" and len(s) == 9:
         s = "0" + s  # 5XXXXXXXXX -> 05XXXXXXXXX
 
-    # 4) נורמליזציה ל-E.164 של ישראל
+    # נורמליזציה ל-E.164 ישראל
     if s.startswith("+972"):
         return "whatsapp:" + s
     if s.startswith("972"):
         return "whatsapp:+" + s
-    if s.startswith("0") and len(s) in (9, 10):  # 05XXXXXXXX (=10) או קווי 0X-XXXXXXX (=9/10)
+    if s.startswith("0") and len(s) in (9, 10):
         return "whatsapp:+972" + s[1:]
     if s.startswith("+"):
         return "whatsapp:" + s
     if len(s) == 10 and s.startswith("05"):
         return "whatsapp:+972" + s[1:]
-
     return None
-
 
 def log_event(event_key: str, to_phone: str, direction: str, payload_summary: str, result: str):
     log_ws.append_row([now_ts(), event_key, to_phone, direction, payload_summary, result], value_input_option="RAW")
