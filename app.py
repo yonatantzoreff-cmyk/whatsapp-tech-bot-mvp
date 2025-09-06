@@ -1,3 +1,9 @@
+import json  # הוסף
+
+TWILIO_CONTENT_SID_REQUEST = os.getenv("TWILIO_CONTENT_SID_REQUEST", "")
+TWILIO_CONTENT_SID_FOLLOWUP = os.getenv("TWILIO_CONTENT_SID_FOLLOWUP", "")
+
+
 import os
 import hmac
 import base64
@@ -140,61 +146,54 @@ def tech_sections() -> List[Dict[str, Any]]:
     return sections
 
 def twilio_send_template(to_whatsapp: str, name: str, show: str, date_str: str, show_time_str: str, event_key: str):
-    # 1) Open session (simple body matching the approved template text)
+    # 1) שולחים תבנית בעזרת Content API (פותח חלון חוקי)
     msg = client.messages.create(
         from_=TWILIO_WHATSAPP_FROM,
         to=to_whatsapp,
-        body=(
-            f"היי {name},\n"
-            f"כאן העוזר האישי של יונתן מההיכל בהרצליה.\n"
-            f"בנוגע ל“{show}” בתאריך {date_str} בשעה {show_time_str} – מה שעת הכניסה להקמות שנוחה לכם?\n"
-            f"אפשר לבחור מכפתורים (מרווחים של 30 דק׳).\n"
-            f"אם זה לא אצלך, ניתן להפנות אותנו לאיש הקשר הנכון. תודה!"
-        )
+        content_sid=TWILIO_CONTENT_SID_REQUEST,
+        content_variables=json.dumps({
+            "1": name or "שלום",
+            "2": show or "",
+            "3": date_str or "",
+            "4": show_time_str or ""
+        })
     )
     log_event(event_key, to_whatsapp, "out", "template_open", f"sid={msg.sid}")
 
-    # 2) Interactive List
+    # 2) מיד שולחים Interactive List (כבר בתוך חלון שיחה)
     interactive = {
         "type": "list",
         "header": {"type": "text", "text": f"שעת המופע: {show_time_str}"},
         "body": {"text": "בחר/י שעת כניסה להקמות:"},
         "footer": {"text": "טווח: 06:00–20:00"},
-        "action": {
-            "button": "בחר/י שעה",
-            "sections": tech_sections()
-        }
+        "action": {"button": "בחר/י שעה", "sections": tech_sections()}
     }
-    msg2 = client.messages.create(
-        from_=TWILIO_WHATSAPP_FROM,
-        to=to_whatsapp,
-        interactive=interactive
-    )
+    msg2 = client.messages.create(from_=TWILIO_WHATSAPP_FROM, to=to_whatsapp, interactive=interactive)
     log_event(event_key, to_whatsapp, "out", "interactive_list", f"sid={msg2.sid}")
 
-    # 3) Meta buttons
+    # 3) כפתורי "עוד לא יודע" / "אני לא איש הקשר"
     buttons = {
         "type": "button",
         "body": {"text": "אפשרויות נוספות:"},
-        "action": {
-            "buttons": [
-                {"type": "reply", "reply": {"id": "btn_unknown", "title": "אני עוד לא יודע"}},
-                {"type": "reply", "reply": {"id": "btn_redirect", "title": "אני לא איש הקשר"}},
-            ]
-        }
+        "action": {"buttons": [
+            {"type": "reply", "reply": {"id": "btn_unknown", "title": "אני עוד לא יודע"}},
+            {"type": "reply", "reply": {"id": "btn_redirect", "title": "אני לא איש הקשר"}},
+        ]}
     }
-    msg3 = client.messages.create(
-        from_=TWILIO_WHATSAPP_FROM,
-        to=to_whatsapp,
-        interactive=buttons
-    )
+    msg3 = client.messages.create(from_=TWILIO_WHATSAPP_FROM, to=to_whatsapp, interactive=buttons)
     log_event(event_key, to_whatsapp, "out", "meta_buttons", f"sid={msg3.sid}")
 
 def twilio_send_followup(to_whatsapp: str, show: str, date_str: str, show_time_str: str, event_key: str):
+    # תבנית פולואפ קצרה
     msg = client.messages.create(
         from_=TWILIO_WHATSAPP_FROM,
         to=to_whatsapp,
-        body=f"היי, חוזרים לגבי “{show}” בתאריך {date_str} בשעה {show_time_str}. נוכל לקבוע שעת כניסה להקמות?",
+        content_sid=TWILIO_CONTENT_SID_FOLLOWUP,
+        content_variables=json.dumps({
+            "1": show or "",
+            "2": date_str or "",
+            "3": show_time_str or ""
+        })
     )
     log_event(event_key, to_whatsapp, "out", "followup_template", f"sid={msg.sid}")
 
@@ -203,18 +202,10 @@ def twilio_send_followup(to_whatsapp: str, show: str, date_str: str, show_time_s
         "header": {"type": "text", "text": f"שעת המופע: {show_time_str}"},
         "body": {"text": "בחר/י שעת כניסה להקמות:"},
         "footer": {"text": "טווח: 06:00–20:00"},
-        "action": {
-            "button": "בחר/י שעה",
-            "sections": tech_sections()
-        }
+        "action": {"button": "בחר/י שעה", "sections": tech_sections()}
     }
-    msg2 = client.messages.create(
-        from_=TWILIO_WHATSAPP_FROM,
-        to=to_whatsapp,
-        interactive=interactive
-    )
+    msg2 = client.messages.create(from_=TWILIO_WHATSAPP_FROM, to=to_whatsapp, interactive=interactive)
     log_event(event_key, to_whatsapp, "out", "interactive_list", f"sid={msg2.sid}")
-
 def send_followup_choice_buttons(to_whatsapp: str, event_key: str):
     buttons = {
         "type": "button",
