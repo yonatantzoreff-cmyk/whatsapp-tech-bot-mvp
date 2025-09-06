@@ -1,9 +1,4 @@
 import json  # הוסף
-
-TWILIO_CONTENT_SID_REQUEST = os.getenv("TWILIO_CONTENT_SID_REQUEST", "")
-TWILIO_CONTENT_SID_FOLLOWUP = os.getenv("TWILIO_CONTENT_SID_FOLLOWUP", "")
-
-
 import os
 import hmac
 import base64
@@ -33,6 +28,9 @@ TWILIO_WHATSAPP_FROM = os.environ.get("TWILIO_WHATSAPP_FROM", "")  # e.g., 'what
 
 GOOGLE_SHEET_NAME = os.environ.get("GOOGLE_SHEET_NAME", "Hertsliya-Hall-Tech-Bot-10-25")
 GOOGLE_SERVICE_ACCOUNT_JSON = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON", "google.json")
+
+TWILIO_CONTENT_SID_REQUEST = os.getenv("TWILIO_CONTENT_SID_REQUEST", "")
+TWILIO_CONTENT_SID_FOLLOWUP = os.getenv("TWILIO_CONTENT_SID_FOLLOWUP", "")
 
 if not all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM]):
     print("[WARN] Missing Twilio env vars - set them in Render or .env")
